@@ -1,0 +1,373 @@
+{
+  "name": "BOT PetShop",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "petshop-bot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "pet-0001-0001-0001-0001-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -120,
+        220
+      ],
+      "webhookId": "petshop-bot"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK",
+        "options": {}
+      },
+      "id": "pet-0001-0001-0001-0001-000000000002",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [120, 120]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body ?? $input.first().json;\nconst data = body.data ?? body;\nconst key = data.key ?? body.key ?? {};\nconst message = data.message ?? body.message ?? {};\nif (key.fromMe === true) return [];\nif ((key.remoteJid ?? '').includes('@g.us')) return [];\nconst from = (key.remoteJid ?? '')\n  .replace('@s.whatsapp.net', '')\n  .replace('@g.us', '');\nif (!from || from.length < 5) return [];\nconst texto = (message.conversation ?? message.extendedTextMessage?.text ?? message.buttonsResponseMessage?.selectedDisplayText ?? message.listResponseMessage?.singleSelectReply?.selectedRowId ?? '').trim();\nconst buttonId = message.buttonsResponseMessage?.selectedButtonId ?? message.listResponseMessage?.singleSelectReply?.selectedRowId ?? null;\nreturn [{ json: { from, texto, buttonId } }];"
+      },
+      "id": "pet-0001-0001-0001-0001-000000000003",
+      "name": "Parsear Mensagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [360, 220]
+    },
+    {
+      "parameters": {
+        "url": "=https://YOUR_SUPABASE_URL.supabase.co/rest/v1/clientes?telefone=eq.{{ $('Parsear Mensagem').item.json.from }}&select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_ANON_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_ANON_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "pet-0001-0001-0001-0001-000000000004",
+      "name": "GET Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [600, 120]
+    },
+    {
+      "parameters": {
+        "url": "=https://YOUR_SUPABASE_URL.supabase.co/rest/v1/sessoes_petshop?telefone=eq.{{ $('Parsear Mensagem').item.json.from }}&select=etapa,dados",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_SUPABASE_ANON_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_ANON_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "pet-0001-0001-0001-0001-000000000005",
+      "name": "GET Sessao",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [600, 320]
+    },
+    {
+      "parameters": {
+        "jsCode": "const p = $('Parsear Mensagem').item.json;\nlet clientes = [], sessoes = [];\ntry { const t = $('GET Cliente').item.json.data ?? $('GET Cliente').item.json; clientes = typeof t === 'string' ? JSON.parse(t) : (Array.isArray(t) ? t : []); } catch (e) { clientes = []; }\ntry { const t = $('GET Sessao').item.json.data ?? $('GET Sessao').item.json; sessoes = typeof t === 'string' ? JSON.parse(t) : (Array.isArray(t) ? t : []); } catch (e) { sessoes = []; }\nconst cliente = clientes[0] ?? null;\nconst sessao = sessoes[0] ?? null;\nreturn [{ json: {\n  from: p.from,\n  texto: p.texto,\n  buttonId: p.buttonId,\n  clienteExiste: cliente !== null,\n  clienteId: cliente?.id ?? null,\n  clienteNome: cliente?.nome ?? null,\n  clientePet: cliente?.pet_nome ?? null,\n  clientePetTipo: cliente?.pet_tipo ?? null,\n  sessaoEtapa: sessao?.etapa ?? null,\n  sessaoDados: sessao?.dados ?? {}\n} }];"
+      },
+      "id": "pet-0001-0001-0001-0001-000000000006",
+      "name": "Consolidar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [840, 220]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.clienteExiste }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "pet-0001-0001-0001-0001-000000000007",
+      "name": "Cliente existe?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1080, 220]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\nconst texto = (d.texto ?? '').trim();\nconst etapa = d.sessaoEtapa;\nconst dados = d.sessaoDados ?? {};\nconst upper = texto.toUpperCase();\nlet prox = null;\nlet resp = '';
+
+if (upper === 'CANCELAR') {
+  resp = '✅ Tudo bem! Se quiser, volte a qualquer momento digitando MENU.';
+  return [{ json: { from: d.from, resp, prox: null, saveSession: false } }];
+}
+
+if (!d.clienteExiste) {
+  if (!etapa) {
+    resp = 'Olá! Bem-vindo ao Pet Shop Zap 😊\n\nPrimeiro me diga o seu nome e o nome do seu pet:';
+    prox = 'aguardando_cadastro';
+  } else if (etapa === 'aguardando_cadastro') {
+    const parts = texto.split(/\||-/).map(p => p.trim()).filter(Boolean);
+    if (parts.length < 2) {
+      resp = '⚠️ Por favor, envie no formato: seu nome | nome do pet';
+      prox = 'aguardando_cadastro';
+    } else {
+      resp = `Obrigado, *${parts[0]}*! Seu pet *${parts[1]}* já está registrado.\n\nDigite MENU para ver o menu do Pet Zap.`;
+      prox = null;
+      return [{ json: { from: d.from, resp, prox, saveSession: false, createCustomer: true, customerData: { nome: parts[0], pet_nome: parts[1] } } }];
+    }
+  }
+  return [{ json: { from: d.from, resp, prox, saveSession: true, createCustomer: false, customerData: null } }];
+}
+
+if (upper === 'MENU' || texto === '0') {
+  resp = `👋 Olá ${d.clienteNome}! Aqui está o menu do Pet Zap:\n\n1️⃣ Ver produtos\n2️⃣ Reservar tosa\n3️⃣ Reservar banho\n4️⃣ Meus pedidos\n5️⃣ Falar com atendimento`;
+  return [{ json: { from: d.from, resp, prox: null, saveSession: false } }];
+}
+
+if (!etapa) {
+  resp = `Olá ${d.clienteNome}! Escolha uma opção:\n\n1️⃣ Ver produtos\n2️⃣ Reservar tosa\n3️⃣ Reservar banho\n4️⃣ Meus pedidos\n5️⃣ Falar com atendimento`;
+  return [{ json: { from: d.from, resp, prox: null, saveSession: false } }];
+}
+
+if (etapa === 'reserva_tosa') {
+  resp = 'Perfeito! Envie a data e horário da tosa no formato DD/MM/YYYY hh:mm';
+  return [{ json: { from: d.from, resp, prox: 'reserva_tosa_data', saveSession: true } }];
+}
+
+if (etapa === 'reserva_tosa_data') {
+  resp = `Reserva de tosa agendada para *${texto}*. Obrigado!`;
+  return [{ json: { from: d.from, resp, prox: null, saveSession: false, createBooking: true, bookingData: { tipo_servico: 'tosa', horario: texto } } }];
+}
+
+if (etapa === 'reserva_banho') {
+  resp = 'Perfeito! Envie a data e horário do banho no formato DD/MM/YYYY hh:mm';
+  return [{ json: { from: d.from, resp, prox: 'reserva_banho_data', saveSession: true } }];
+}
+
+if (etapa === 'reserva_banho_data') {
+  resp = `Reserva de banho agendada para *${texto}*. Obrigado!`;
+  return [{ json: { from: d.from, resp, prox: null, saveSession: false, createBooking: true, bookingData: { tipo_servico: 'banho', horario: texto } } }];
+}
+
+if (texto === '1') {
+  resp = 'Aqui estão nossos produtos em destaque:\n\n- Ração Premium 2kg\n- Shampoos Naturais\n- Petiscos Saudáveis\n\nEnvie o nome do produto para ver detalhes ou fazer pedido.';
+  return [{ json: { from: d.from, resp, prox: null, saveSession: false } }];
+}
+
+if (texto === '2') {
+  resp = 'Ótimo! Vamos agendar sua tosa. Envie a data e horário no formato DD/MM/YYYY hh:mm.';
+  return [{ json: { from: d.from, resp, prox: 'reserva_tosa', saveSession: true } }];
+}
+
+if (texto === '3') {
+  resp = 'Ótimo! Vamos agendar o banho. Envie a data e horário no formato DD/MM/YYYY hh:mm.';
+  return [{ json: { from: d.from, resp, prox: 'reserva_banho', saveSession: true } }];
+}
+
+if (texto === '4') {
+  resp = 'Buscando seus pedidos... Em breve você receberá a lista de seus pedidos ativos.';
+  return [{ json: { from: d.from, resp, prox: null, saveSession: false } }];
+}
+
+resp = 'Não entendi. Digite MENU para ver as opções novamente.';
+return [{ json: { from: d.from, resp, prox: null, saveSession: false } }];"
+      },
+      "id": "pet-0001-0001-0001-0001-000000000008",
+      "name": "Lógica do Bot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 220]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://evolution.automacaopme.com.br/message/sendText/Bot_PetShop",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_EVOLUTION_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.from }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.resp }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "pet-0001-0001-0001-0001-000000000009",
+      "name": "Enviar WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 220]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Respond 200",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Parsear Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear Mensagem": {
+      "main": [
+        [
+          {
+            "node": "GET Cliente",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GET Sessao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Cliente": {
+      "main": [
+        [
+          {
+            "node": "Consolidar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Sessao": {
+      "main": [
+        [
+          {
+            "node": "Consolidar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidar": {
+      "main": [
+        [
+          {
+            "node": "Cliente existe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cliente existe?": {
+      "main": [
+        [
+          {
+            "node": "Lógica do Bot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lógica do Bot": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

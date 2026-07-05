@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PetZap — Dashboard Pet Shop</title>
+<meta name="description" content="Dashboard PetZap para gerenciar produtos, agendamentos, pedidos e clientes de pet shop." />
+<style>
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --surface-alt: #f4f5f7;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --border: #d2d2d7;
+  --primary: #3D8BFF;
+  --primary-dark: #0E2D7A;
+  --accent: #F5A623;
+  --radius: 20px;
+  --shadow: 0 10px 30px rgba(0,0,0,.08);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); }
+body { display: flex; }
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+.app { display: flex; width: 100%; min-height: 100vh; }
+.sidebar { width: 260px; background: #0B1623; color: #fff; display: flex; flex-direction: column; }
+.sidebar-header { padding: 28px 24px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.sidebar-header h1 { margin: 0; font-size: 20px; letter-spacing: .03em; }
+.sidebar-nav { flex: 1; padding: 16px 0; }
+.nav-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 24px; border: none; background: none; appearance: none; color: rgba(255,255,255,.82); font-size: inherit; text-align: left; transition: background .2s ease, color .2s ease; }
+.nav-item.active, .nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+.nav-item span { font-size: 14px; }
+.main { flex: 1; padding: 24px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.page { display: none; }
+.page.active { display: block; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; margin-bottom: 24px; }
+.card h2 { margin-top: 0; }
+.grid { display: grid; gap: 20px; }
+.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.input-group { margin-bottom: 16px; }
+.input-group label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--muted); }
+.input-group input, .input-group select, .input-group textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: #fff; color: var(--text); }
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 18px; border-radius: 999px; border: none; background: var(--primary); color: #fff; }
+.button.secondary { background: #1f2937; }
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { padding: 14px 12px; border-bottom: 1px solid #eaecf0; text-align: left; }
+.table th { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; }
+.badge { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; background: #eef2ff; color: #3730a3; font-size: 12px; }
+.toast { position: fixed; right: 24px; bottom: 24px; background: #111827; color: #fff; padding: 16px 18px; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,.25); display: none; }
+.toast.show { display: block; }
+.produtos-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.search-input { padding: 12px 18px; border: 1px solid var(--border); border-radius: 999px; min-width: 220px; background: #fff; }
+.product-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+.filter-chip { padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border); background: #fff; font-size: 13px; color: var(--muted); transition: background .15s ease, color .15s ease, border-color .15s ease; }
+.filter-chip.active { background: #111827; color: #fff; border-color: #111827; }
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+.product-card { background: #fff; border: 1px solid var(--border); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; transition: transform .2s ease, box-shadow .2s ease; }
+.product-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.product-card-media { position: relative; aspect-ratio: 4 / 3; background: var(--surface-alt); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.product-card-media img { width: 100%; height: 100%; object-fit: cover; }
+.product-card-media .placeholder-icon { font-size: 42px; opacity: .35; }
+.product-badge-category { position: absolute; top: 10px; left: 10px; background: rgba(17,24,39,.82); color: #fff; font-size: 11px; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; }
+.product-badge-stock { position: absolute; top: 10px; right: 10px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+.product-badge-stock.in-stock { background: #dcfce7; color: #166534; }
+.product-badge-stock.low-stock { background: #fef3c7; color: #92400e; }
+.product-badge-stock.out-stock { background: #fee2e2; color: #991b1b; }
+.product-card-body { padding: 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.product-card-name { font-size: 15px; font-weight: 600; margin: 0; line-height: 1.3; }
+.product-card-category { font-size: 12px; color: var(--muted); margin: 0; }
+.product-card-price { font-size: 21px; font-weight: 700; color: var(--primary); margin: 4px 0 0; }
+.product-card-actions { margin-top: auto; padding-top: 12px; display: flex; gap: 8px; }
+.product-card-actions .button { flex: 1; padding: 10px 14px; }
+.empty-state { padding: 40px 0; text-align: center; color: var(--muted); }
+@media (max-width: 900px) {
+  .app { flex-direction: column; }
+  .sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
+  .sidebar-header { display: none; }
+  .sidebar-nav { display: flex; gap: 8px; padding: 12px; }
+  .nav-item { width: auto; padding: 12px 16px; white-space: nowrap; }
+  .main { padding: 16px; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .produtos-toolbar { flex-direction: column; align-items: stretch; }
+  .search-input { min-width: 0; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>PetZap</h1>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-page="dashboard"><span>Dashboard</span></button>
+      <button class="nav-item" data-page="produtos"><span>Produtos</span></button>
+      <button class="nav-item" data-page="agendamentos"><span>Agendamentos</span></button>
+      <button class="nav-item" data-page="clientes"><span>Clientes</span></button>
+      <button class="nav-item" data-page="notificacoes"><span>Notificações</span></button>
+    </nav>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>PetZap Dashboard</h1>
+        <p>Gerencie produtos, reservas e atendimento via WhatsApp.</p>
+      </div>
+      <button class="button" id="refreshBtn">Atualizar</button>
+    </div>
+
+    <section class="page active" id="page-dashboard">
+      <div class="grid grid-2">
+        <div class="card">
+          <h2>Visão geral</h2>
+          <div class="grid grid-2" style="gap:16px; margin-top:16px;">
+            <div style="background:#fff; padding:18px; border-radius:18px; border:1px solid #e5e7eb;"><strong id="kpi-produtos">0</strong><p>Produtos</p></div>
+            <div style="background:#fff; padding:18px; border-radius:18px; border:1px solid #e5e7eb;"><strong id="kpi-agendamentos">0</strong><p>Agendamentos</p></div>
+            <div style="background:#fff; padding:18px; border-radius:18px; border:1px solid #e5e7eb;"><strong id="kpi-clientes">0</strong><p>Clientes</p></div>
+            <div style="background:#fff; padding:18px; border-radius:18px; border:1px solid #e5e7eb;"><strong id="kpi-notificacoes">0</strong><p>Notificações</p></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Últimos agendamentos</h2>
+          <table class="table" id="table-recent-bookings">
+            <thead><tr><th>Cliente</th><th>Serviço</th><th>Data</th><th>Status</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-produtos">
+      <div class="card">
+        <div class="produtos-toolbar">
+          <h2 style="margin:0;">Produtos</h2>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <input type="search" id="produtoSearch" class="search-input" placeholder="Buscar produto...">
+            <button class="button" id="openAddProduct">Novo produto</button>
+          </div>
+        </div>
+        <div class="product-filters" id="produtoFilters"></div>
+        <div class="product-grid" id="grid-produtos"></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-agendamentos">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h2>Agendamentos</h2>
+          <button class="button secondary" id="openAddBooking">Novo agendamento</button>
+        </div>
+        <table class="table" id="table-agendamentos">
+          <thead><tr><th>Cliente</th><th>Pet</th><th>Serviço</th><th>Data</th><th>Horário</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="page" id="page-clientes">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h2>Clientes</h2>
+          <button class="button" id="openAddClient">Novo cliente</button>
+        </div>
+        <table class="table" id="table-clientes">
+          <thead><tr><th>Nome</th><th>Telefone</th><th>Pet</th><th>Tipo</th><th>Ações</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="page" id="page-notificacoes">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h2>Notificações</h2>
+          <button class="button" id="openAddNotification">Nova notificação</button>
+        </div>
+        <table class="table" id="table-notificacoes">
+          <thead><tr><th>Título</th><th>Mensagem</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const config = {
+  supabaseUrl: 'https://ywsobgbpwhykkfolvoml.supabase.co',
+  supabaseKey: 'sb_publishable_mUFzKFm_RW49BNloXy0NpA_iOl9rIwM',
+  webhookUrl: 'https://YOUR_N8N_HOST/webhook/notificar-petshop'
+};
+
+function showToast(text) {
+  const toast = document.getElementById('toast');
+  toast.textContent = text;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
+function fetchJson(url, options = {}) {
+  return fetch(url, options).then(async res => {
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    return res.json();
+  });
+}
+
+async function loadDashboard() {
+  try {
+    const [produtos, agendamentos, agendamentosRecentes, clientes, notificacoes] = await Promise.all([
+      fetchJson(`${config.supabaseUrl}/rest/v1/produtos?select=id`, { headers: supaHeaders() }),
+      fetchJson(`${config.supabaseUrl}/rest/v1/agendamentos_grooming?select=id`, { headers: supaHeaders() }),
+      fetchJson(`${config.supabaseUrl}/rest/v1/agendamentos_grooming?select=id,status,pet_nome,tipo_servico,data,horario,cliente_id(nome)&order=created_at.desc&limit=5`, { headers: supaHeaders() }),
+      fetchJson(`${config.supabaseUrl}/rest/v1/clientes?select=id`, { headers: supaHeaders() }),
+      fetchJson(`${config.supabaseUrl}/rest/v1/notificacoes?select=id`, { headers: supaHeaders() })
+    ]);
+    document.getElementById('kpi-produtos').textContent = produtos.length;
+    document.getElementById('kpi-agendamentos').textContent = agendamentos.length;
+    document.getElementById('kpi-clientes').textContent = clientes.length;
+    document.getElementById('kpi-notificacoes').textContent = notificacoes.length;
+    const tbody = document.querySelector('#table-recent-bookings tbody');
+    tbody.innerHTML = agendamentosRecentes.map(item => `<tr><td>${item.cliente_id?.nome || '—'}</td><td>${item.pet_nome || '—'}</td><td>${item.tipo_servico}</td><td>${item.data}</td><td>${item.horario}</td><td><span class="badge">${item.status}</span></td></tr>`).join('');
+  } catch (error) {
+    showToast('Erro ao carregar dashboard');
+  }
+}
+
+function supaHeaders() {
+  return {
+    apikey: config.supabaseKey,
+    Authorization: `Bearer ${config.supabaseKey}`,
+    'Content-Type': 'application/json'
+  };
+}
+
+let allProdutos = [];
+
+function stockBadge(estoque) {
+  if (estoque <= 0) return { cls: 'out-stock', label: 'Sem estoque' };
+  if (estoque <= 5) return { cls: 'low-stock', label: `Últimas ${estoque}` };
+  return { cls: 'in-stock', label: 'Em estoque' };
+}
+
+function renderProdutoCard(item) {
+  const preco = Number(item.preco || 0).toFixed(2);
+  const stock = stockBadge(item.estoque ?? 0);
+  const media = item.imagem_url
+    ? `<img src="${item.imagem_url}" alt="${item.nome}">`
+    : `<span class="placeholder-icon">🐾</span>`;
+  return `
+    <article class="product-card">
+      <div class="product-card-media">
+        ${media}
+        ${item.categoria ? `<span class="product-badge-category">${item.categoria}</span>` : ''}
+        <span class="product-badge-stock ${stock.cls}">${stock.label}</span>
+      </div>
+      <div class="product-card-body">
+        <p class="product-card-name">${item.nome}</p>
+        <p class="product-card-price">R$ ${preco}</p>
+        <div class="product-card-actions">
+          <button class="button secondary" onclick="editProduct(${item.id})">Editar</button>
+        </div>
+      </div>
+    </article>`;
+}
+
+function renderProdutoGrid(produtos) {
+  const grid = document.getElementById('grid-produtos');
+  grid.innerHTML = produtos.length
+    ? produtos.map(renderProdutoCard).join('')
+    : '<p class="empty-state">Nenhum produto encontrado.</p>';
+}
+
+function renderProdutoFilters(produtos) {
+  const filtersEl = document.getElementById('produtoFilters');
+  const categorias = ['Todos', ...new Set(produtos.map(p => p.categoria).filter(Boolean))];
+  filtersEl.innerHTML = categorias.map((cat, i) => `<button class="filter-chip${i === 0 ? ' active' : ''}" data-cat="${cat}">${cat}</button>`).join('');
+  filtersEl.querySelectorAll('.filter-chip').forEach(btn => btn.addEventListener('click', () => {
+    filtersEl.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyProdutoFilters();
+  }));
+}
+
+function applyProdutoFilters() {
+  const activeCat = document.querySelector('#produtoFilters .filter-chip.active')?.dataset.cat || 'Todos';
+  const term = document.getElementById('produtoSearch').value.trim().toLowerCase();
+  let filtered = allProdutos;
+  if (activeCat !== 'Todos') filtered = filtered.filter(p => p.categoria === activeCat);
+  if (term) filtered = filtered.filter(p => p.nome.toLowerCase().includes(term));
+  renderProdutoGrid(filtered);
+}
+
+async function loadProdutos() {
+  const grid = document.getElementById('grid-produtos');
+  grid.innerHTML = '<p class="empty-state">Carregando...</p>';
+  try {
+    const produtos = await fetchJson(`${config.supabaseUrl}/rest/v1/produtos?select=*`, { headers: supaHeaders() });
+    allProdutos = produtos;
+    renderProdutoFilters(produtos);
+    renderProdutoGrid(produtos);
+  } catch (error) {
+    grid.innerHTML = '<p class="empty-state">Falha ao carregar produtos.</p>';
+  }
+}
+
+async function loadAgendamentos() {
+  const tbody = document.querySelector('#table-agendamentos tbody');
+  tbody.innerHTML = '<tr><td colspan="6">Carregando...</td></tr>';
+  try {
+    const agendamentos = await fetchJson(`${config.supabaseUrl}/rest/v1/agendamentos_grooming?select=*,cliente_id( nome )&order=data.desc`, { headers: supaHeaders() });
+    tbody.innerHTML = agendamentos.map(item => `<tr><td>${item.cliente_id?.nome || '—'}</td><td>${item.pet_nome}</td><td>${item.tipo_servico}</td><td>${item.data}</td><td>${item.horario}</td><td><span class="badge">${item.status}</span></td></tr>`).join('');
+  } catch (error) {
+    tbody.innerHTML = '<tr><td colspan="6">Falha ao carregar agendamentos</td></tr>';
+  }
+}
+
+async function loadClientes() {
+  const tbody = document.querySelector('#table-clientes tbody');
+  tbody.innerHTML = '<tr><td colspan="5">Carregando...</td></tr>';
+  try {
+    const clientes = await fetchJson(`${config.supabaseUrl}/rest/v1/clientes?select=*`, { headers: supaHeaders() });
+    tbody.innerHTML = clientes.map(item => `<tr><td>${item.nome}</td><td>${item.telefone}</td><td>${item.pet_nome || '—'}</td><td>${item.pet_tipo || '—'}</td><td><button class="button secondary" onclick="editClient(${item.id})">Editar</button></td></tr>`).join('');
+  } catch (error) {
+    tbody.innerHTML = '<tr><td colspan="5">Falha ao carregar clientes</td></tr>';
+  }
+}
+
+async function loadNotificacoes() {
+  const tbody = document.querySelector('#table-notificacoes tbody');
+  tbody.innerHTML = '<tr><td colspan="4">Carregando...</td></tr>';
+  try {
+    const notificacoes = await fetchJson(`${config.supabaseUrl}/rest/v1/notificacoes?select=*`, { headers: supaHeaders() });
+    tbody.innerHTML = notificacoes.map(item => `<tr><td>${item.titulo}</td><td>${item.mensagem}</td><td><span class="badge">${item.status}</span></td><td><button class="button secondary" onclick="sendNotification(${item.id})">Enviar</button></td></tr>`).join('');
+  } catch (error) {
+    tbody.innerHTML = '<tr><td colspan="4">Falha ao carregar notificações</td></tr>';
+  }
+}
+
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(btn => btn.classList.toggle('active', btn.dataset.page === page));
+  document.getElementById(`page-${page}`).classList.add('active');
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'produtos') loadProdutos();
+  if (page === 'agendamentos') loadAgendamentos();
+  if (page === 'clientes') loadClientes();
+  if (page === 'notificacoes') loadNotificacoes();
+}
+
+document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => switchPage(btn.dataset.page)));
+document.getElementById('produtoSearch').addEventListener('input', applyProdutoFilters);
+document.getElementById('refreshBtn').addEventListener('click', () => {
+  const active = document.querySelector('.nav-item.active').dataset.page;
+  switchPage(active);
+});
+
+window.editProduct = id => showToast('Editar produto não implementado ainda.');
+window.editClient = id => showToast('Editar cliente não implementado ainda.');
+window.sendNotification = id => showToast('Envio de notificação ainda não implementado.');
+
+loadDashboard();
+</script>
+</body>
+</html>
