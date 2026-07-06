@@ -29,7 +29,7 @@ Produto da **Automatiz.ia** que automatiza atendimento, catálogo e agendamentos
 ```
 clientes             — id, nome, telefone, pet_nome, pet_tipo
 sessoes_petshop      — telefone (PK), etapa, dados (JSONB), updated_at
-produtos             — id, nome, categoria, preco, estoque, descricao, imagem_url
+produtos             — id, nome, categoria, preco, preco_original, estoque, descricao, imagem_url, avaliacao, destaque
 pedidos              — id, cliente_id (FK→clientes), produto_id (FK→produtos), quantidade, total, status
 agendamentos_grooming— id, cliente_id (FK→clientes), pet_nome, tipo_servico, data, horario, status, notas
 notificacoes         — id, cliente_id (FK→clientes), titulo, mensagem, status
@@ -94,7 +94,7 @@ SPA pura: nenhum framework, nenhum build. Abre direto no browser. Navegação cl
 | Página | Conteúdo |
 |---|---|
 | **Dashboard** | KPIs (produtos, agendamentos, clientes, notificações) + tabela dos últimos agendamentos (com nome do cliente via join `cliente_id(nome)`) |
-| **Produtos** | Vitrine estilo e-commerce: grid de cards com imagem/placeholder, badge de categoria, badge de estoque (verde "Em estoque" / amarelo "Últimas N" / vermelho "Sem estoque"), preço em destaque, busca por nome e filtro por categoria (chips) |
+| **Produtos** | Vitrine estilo e-commerce: grid de cards com imagem/placeholder, badge de categoria, badge de estoque (verde "Em estoque" / amarelo "Últimas N" / vermelho "Sem estoque"), badge de desconto (laranja, `-XX%` calculado a partir de `preco_original`), avaliação por estrelas (`avaliacao`), coração de "destaque" (`destaque`, toggle via PATCH), busca por nome e filtro por categoria (chips) |
 | **Agendamentos** | Tabela simples (cliente, pet, serviço, data, horário, status) |
 | **Clientes** | Tabela simples (nome, telefone, pet, tipo) |
 | **Notificações** | Tabela simples (título, mensagem, status) |
@@ -111,6 +111,16 @@ Paleta alinhada à marca **Automatiz.ia**, mesma usada no Condominio_zap:
 --sidebar bg:   #0B1623  /* navy de marca */
 ```
 Fonte do sistema (`-apple-system, BlinkMacSystemFont, "Segoe UI"`), cards com `border-radius: 20px` e sombra suave — estilo "Apple Store" já usado no Escola_zap.
+
+**Exceção: vitrine de Produtos** usa uma segunda paleta, inspirada em `breeds.com.br` (referência trazida
+pelo cliente), aplicada **só** dentro do escopo da página de Produtos — sidebar e demais páginas
+continuam na paleta Automatiz.ia acima:
+```css
+--shop-green:  #0A4F42  /* verde-escuro — preço, badge de categoria, botões da vitrine */
+--shop-orange: #F57F45  /* laranja — badge de desconto, coração de destaque ativo */
+```
+Escopar sempre via seletor (`.produtos-toolbar .button`, `.product-card-actions .button`, `.filter-chip.active`)
+em vez de trocar `--primary` global, para não vazar a paleta da vitrine para o resto do dashboard.
 
 **Cuidado com `<button>` sem classe de fundo** (ex.: `.nav-item`): sempre resetar `appearance: none; background: none; border: none;` explicitamente — sem isso, o navegador pode renderizar o chrome nativo do botão por cima do CSS (bug já corrigido no sidebar em 2026-07-05).
 

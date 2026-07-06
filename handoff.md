@@ -10,6 +10,24 @@
 
 ## O que foi entregue nesta sessão (2026-07-05)
 
+### 0. Segunda paleta na vitrine (referência Breeds.com.br)
+Analisado o site `breeds.com.br` (cores extraídas por amostragem de pixel, não estimativa visual) e
+aplicada uma segunda paleta **só na página de Produtos**, por cima do redesenho de storefront já
+existente:
+- `--shop-green: #0A4F42` e `--shop-orange: #F57F45` — escopados via seletor
+  (`.produtos-toolbar .button`, `.product-card-actions .button`, `.filter-chip.active`,
+  `.product-card-price`), sem tocar em `--primary` global (sidebar e demais páginas continuam
+  na paleta Automatiz.ia).
+- Badge de desconto (laranja, `-XX%`) quando `preco_original > preco`, com preço antigo riscado.
+- Avaliação por estrelas (`avaliacao`, 0–5, arredondado).
+- Coração de "destaque" no canto do card — ao contrário do wishlist do site de referência (que é
+  para o cliente final), aqui foi reaproveitado como um toggle de admin: marca o produto como
+  destaque (`destaque` boolean), gravando via `PATCH /produtos?id=eq.N` com rollback otimista se a
+  chamada falhar.
+- Colunas novas em `produtos`: `preco_original numeric(10,2)`, `avaliacao numeric(2,1)`,
+  `destaque boolean DEFAULT false` (adicionadas via `ALTER TABLE` direto no Supabase, já que a
+  tabela já existia — `schema.sql` foi atualizado para refletir o schema atual em setups novos).
+
 ### 1. Redesenho da página de Produtos (storefront)
 Página de Produtos deixou de ser uma tabela e virou uma vitrine estilo e-commerce, inspirada em
 `liderdamatilha.com.br/cama-pet-impermeavel` (referência trazida pelo cliente):

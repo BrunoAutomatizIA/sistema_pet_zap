@@ -30,9 +30,12 @@ CREATE TABLE IF NOT EXISTS produtos (
   nome text NOT NULL,
   categoria text,
   preco numeric(10,2) NOT NULL DEFAULT 0,
+  preco_original numeric(10,2),
   estoque int DEFAULT 0,
   descricao text,
   imagem_url text,
+  avaliacao numeric(2,1),
+  destaque boolean DEFAULT false,
   created_at timestamptz DEFAULT now()
 );
 ALTER TABLE produtos ENABLE ROW LEVEL SECURITY;
