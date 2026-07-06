@@ -2,9 +2,9 @@
 
 **Produto:** Bot de pet shop via WhatsApp (catálogo, agendamento de banho/tosa, atendimento)
 **Responsável Automatiz.ia:** Bruno Vargas Joaquim
-**Repositório:** (a criar — ver seção CI/CD)
+**Repositório:** https://github.com/BrunoAutomatizIA/sistema_pet_zap
 **Data:** 2026-07-05
-**URL publicada:** (a publicar via GitHub Pages — ver seção CI/CD)
+**URL publicada:** https://brunoautomatizia.github.io/sistema_pet_zap/ (GitHub Pages, branch `main`)
 
 ---
 
@@ -48,6 +48,14 @@ Trocada a paleta genérica (azul `#0a84ff` estilo Apple, sidebar `#0b1220`) pela
 estabelecida no Condominio_zap: `--primary: #3D8BFF`, `--primary-dark: #0E2D7A`, `--accent: #F5A623`,
 sidebar `#0B1623`. Deixa os três dashboards (Condominio, Escola, Pet) visualmente consistentes.
 
+### 5. Repositório e deploy
+Pet_zap virou repositório git próprio (antes vivia solto dentro da pasta `Automatiz.ia`, sem
+histórico independente). Criado `BrunoAutomatizIA/sistema_pet_zap` no GitHub, com `.gitignore`
+excluindo `.claude/` (config local, não faz parte do produto). GitHub Pages ativado
+(`branch main`, path `/`) — mesmo padrão de "CI/CD" usado no Condominio_zap e Escola_zap: qualquer
+push em `main` redeploya o dashboard automaticamente em
+https://brunoautomatizia.github.io/sistema_pet_zap/.
+
 ---
 
 ## Pendências e problemas conhecidos
@@ -62,8 +70,6 @@ sidebar `#0B1623`. Deixa os três dashboards (Condominio, Escola, Pet) visualmen
 2. **Modais de criação/edição não implementados** — botões "Novo produto", "Editar", "Novo
    agendamento", "Novo cliente", "Nova notificação", "Enviar" só mostram toast
    "não implementado ainda". Dashboard hoje é somente leitura na prática.
-3. **CI/CD e repositório GitHub** — Pet_zap ainda não tem repositório próprio nem GitHub Pages
-   configurado (ver próxima seção desta sessão).
 
 ### Média prioridade
 
